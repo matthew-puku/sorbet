@@ -624,7 +624,9 @@ DispatchResult dispatchCallSymbol(const GlobalState &gs, const DispatchArgs &arg
                                   Symbols::noMethod());
         }
 
-        // TODO: confirm 100 and true params
+        // TODO(jez): confirm 100 and true params
+        // TODO(jez) We should not be doing two findMemberTransitive when we already know the method
+        // name is Names::super()
         SymbolRef sym = symbol.data(gs)->findMemberTransitiveAncestors(gs, args.enclosingMethodForSuper, 100, true);
 
         if (sym.exists() && sym.isMethod()) {
@@ -638,6 +640,8 @@ DispatchResult dispatchCallSymbol(const GlobalState &gs, const DispatchArgs &arg
     }
 
     if (!mayBeOverloaded.exists()) {
+        // TODO(jez) We should refactor this code to stop using `args.name`, because soon we're
+        // going to want to essentially treat it as though `args.name` is something else.
         if (args.name == Names::initialize() ||
             (args.name == core::Names::super() && args.enclosingMethodForSuper == Names::initialize())) {
             // Special-case initialize(). We should define this on
@@ -684,7 +688,7 @@ DispatchResult dispatchCallSymbol(const GlobalState &gs, const DispatchArgs &arg
                     e.setHeader("Method `{}` does not exist on `{}`", args.name.show(gs), thisStr);
                 }
                 e.addErrorSection(args.fullType.explainGot(
-                    gs, args.originForUninitialized)); // TODO: version of this in the super case?
+                    gs, args.originForUninitialized)); // TODO(jez): version of this in the super case?
             }
 
             // catch the special case of `interface!`, `abstract!`, `final!`, or `sealed!` and
@@ -732,7 +736,7 @@ DispatchResult dispatchCallSymbol(const GlobalState &gs, const DispatchArgs &arg
                                        fmt::format("include {}", objMeth.data(gs)->owner.data(gs)->name.show(gs)));
                     }
                 }
-                // TODO: special case super for suggestions
+                // TODO(jez): special case super for did you mean
                 auto alternatives = symbol.data(gs)->findMemberFuzzyMatch(gs, args.name);
                 for (auto alternative : alternatives) {
                     auto possibleSymbol = alternative.symbol;
